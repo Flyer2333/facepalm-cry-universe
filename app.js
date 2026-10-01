@@ -1,9 +1,17 @@
-import { stickers } from './data.js';
+import { stickers } from './data.js?v=2';
 import { GIFEncoder, quantize, applyPalette } from './vendor/gifenc.esm.js';
 
 const $ = selector => document.querySelector(selector);
 let filter = 'counts', background = 'white', selected = stickers[0];
 const size = bytes => `${(bytes / 1024).toFixed(1)} KB`;
+function enableFileDrag(image, filename) {
+  image.draggable = true;
+  image.addEventListener('dragstart', event => {
+    if (!event.dataTransfer) return;
+    event.dataTransfer.effectAllowed = 'copy';
+    event.dataTransfer.setData('DownloadURL', `image/gif:${filename()}:${image.src}`);
+  });
+}
 function matches(item) {
   const group = filter === 'all' || (filter === 'counts' && item.featured) || (filter === 'frog' && item.frog) || (filter === 'animation' && item.type === 'animation');
   return group && item.title.toLocaleLowerCase().includes($('#search').value.trim().toLocaleLowerCase());
@@ -15,6 +23,7 @@ function render() {
     card.type = 'button'; card.className = 'card' + (selected.id === item.id ? ' selected' : '');
     card.setAttribute('aria-label', `预览 ${item.title}`); card.setAttribute('aria-pressed', String(selected.id === item.id));
     const img = document.createElement('img'); img.src = item.white.url; img.alt = ''; img.loading = 'lazy'; img.width = 240; img.height = 240;
+    enableFileDrag(img, () => `捂脸哭_${item.id}_white.gif`);
     const title = document.createElement('span'); title.className = 'card-title'; title.textContent = item.title;
     const info = document.createElement('small'); info.textContent = `GIF · ${size(item.white.bytes)}`;
     card.append(img, title, info);
@@ -43,6 +52,7 @@ document.querySelectorAll('[data-bg]').forEach(button => button.addEventListener
   updatePreview();
 }));
 $('#search').addEventListener('input', render);
+enableFileDrag($('#preview-image'), () => `捂脸哭_${selected.id}_${background}.gif`);
 render(); updatePreview();
 
 const master = new Image(); master.src = 'assets/master.png';
